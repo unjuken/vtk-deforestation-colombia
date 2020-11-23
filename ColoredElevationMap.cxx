@@ -188,7 +188,7 @@ vtkSmartPointer<vtkActor> GetGradientActor(int year){
 
     // Use 1% of the points
     onRatio = image->GetPointData()->GetScalars()->GetNumberOfTuples() /
-              (image->GetPointData()->GetScalars()->GetNumberOfTuples() * 0.005);
+              (image->GetPointData()->GetScalars()->GetNumberOfTuples() * 0.003);
     scaleFactor = 1.0;
 
     // Compute the gradient of the Value
@@ -296,76 +296,34 @@ vtkSmartPointer<vtkActor> GetGradientActor(int year){
     vectorGradientActor->SetPosition(0,0,50);
 
     return vectorGradientActor;
-
-    /*
-    // Create a renderer, render window, and interactor
-    // vtkSmartPointer<vtkCamera> sharedCamera =
-    //  vtkSmartPointer<vtkCamera>::New();
-    auto originalRenderer = vtkSmartPointer<vtkRenderer>::New();
-    originalRenderer->SetBackground(namedColors->GetColor3d("Bkg").GetData());
-
-    auto xGradientRenderer = vtkSmartPointer<vtkRenderer>::New();
-    xGradientRenderer->SetBackground(namedColors->GetColor3d("Bkg").GetData());
-
-    auto yGradientRenderer = vtkSmartPointer<vtkRenderer>::New();
-    yGradientRenderer->SetBackground(namedColors->GetColor3d("Bkg").GetData());
-
-    auto vectorGradientRenderer = vtkSmartPointer<vtkRenderer>::New();
-    vectorGradientRenderer->SetBackground(
-            namedColors->GetColor3d("Bkg").GetData());
-
-    auto renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-    renderWindow->SetSize(1000, 1000);
-    renderWindow->AddRenderer(vectorGradientRenderer);
-
-    auto renderWindowInteractor =
-            vtkSmartPointer<vtkRenderWindowInteractor>::New();
-    renderWindowInteractor->SetRenderWindow(renderWindow);
-
-    auto originalActor = vtkSmartPointer<vtkImageActor>::New();
-    originalActor->GetMapper()->SetInputData(originalImage);
-    originalActor->InterpolateOff();
-
-    auto xGradientActor = vtkSmartPointer<vtkImageActor>::New();
-    xGradientActor->InterpolateOff();
-
-    xGradientActor->GetMapper()->SetInputConnection(shiftScaleX->GetOutputPort());
-
-    auto yGradientActor = vtkSmartPointer<vtkImageActor>::New();
-
-    yGradientActor->GetMapper()->SetInputConnection(shiftScaleY->GetOutputPort());
-    yGradientActor->InterpolateOff();
-
-    // Add the actors to the scenes
-    vectorGradientRenderer->AddActor(vectorGradientActor);
-    vectorGradientRenderer->AddActor(originalActor);
-
-    // Render and interact
-    renderWindow->Render();
-    renderWindowInteractor->Start();
-     */
 }
 
 
 int main(int argc, char* argv[])
 {
 
-    vtkSmartPointer<vtkActor> elevationActor = GetElevationActor();
-    vtkSmartPointer<vtkActor> gradientActor = GetGradientActor(2003);
+    // Create a renderer, render window, and interactor
+    vtkSmartPointer<vtkRenderer> renderer =
+            vtkSmartPointer<vtkRenderer>::New();
+    vtkSmartPointer<vtkRenderWindow> renderWindow =
+            vtkSmartPointer<vtkRenderWindow>::New();
+    renderWindow->AddRenderer(renderer);
+    renderWindow->SetSize(1500, 1500);
+    vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+            vtkSmartPointer<vtkRenderWindowInteractor>::New();
+    renderWindowInteractor->SetRenderWindow(renderWindow);
 
-  // Create a renderer, render window, and interactor
-  vtkSmartPointer<vtkRenderer> renderer =
-    vtkSmartPointer<vtkRenderer>::New();
-  vtkSmartPointer<vtkRenderWindow> renderWindow =
-    vtkSmartPointer<vtkRenderWindow>::New();
-  renderWindow->AddRenderer(renderer);
-  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
-    vtkSmartPointer<vtkRenderWindowInteractor>::New();
-  renderWindowInteractor->SetRenderWindow(renderWindow);
+
+    vtkSmartPointer<vtkActor> elevationActor = GetElevationActor();
+    vtkSmartPointer<vtkActor> deforestationActors [19] = {};
+
+    for (int i = 1; i < 20; ++i) {
+        deforestationActors[i-1] = GetGradientActor(2000 + i);
+        renderer->AddActor(deforestationActors[i-1]);
+    }
 
   // Add the actor to the scene
   renderer->AddActor(elevationActor);
-    renderer->AddActor(gradientActor);
   renderer->SetBackground(.1, .2, .3);
 
   // Render and interact
