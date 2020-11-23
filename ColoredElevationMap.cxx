@@ -31,6 +31,9 @@
 #include <vtkImageReader2Factory.h>
 #include <vtkNamedColors.h>
 #include <vtkArrowSource.h>
+#include <vtkSliderRepresentation3D.h>
+#include <vtkSliderWidget.h>
+#include <vtkMarchingCubes.h>
 #include "vtkWarpScalar.h"
 #include "vtkDoubleArray.h"
 #include "vtkImageMapper3D.h"
@@ -39,6 +42,32 @@
 #ifdef vtkGenericDataArray_h
 #define InsertNextTupleValue InsertNextTypedTuple
 #endif
+
+// The callback does the work.
+// The callback keeps a pointer to the sphere whose resolution is
+// controlled. After constructing the callback, the program sets the
+// SphereSource of the callback to
+// the object to be controlled.
+class vtkSliderCallback : public vtkCommand
+{
+public:
+    static vtkSliderCallback *New()
+    {
+        return new vtkSliderCallback;
+    }
+    virtual void Execute(vtkObject *caller, unsigned long, void*)
+    {
+        vtkSliderWidget *sliderWidget = reinterpret_cast<vtkSliderWidget*>(caller);
+        for (int i = 0; i < 19; ++i) {
+            renderer->RemoveActor(deforestationActors[i]);
+        }
+        int year = static_cast<vtkSliderRepresentation *>(sliderWidget->GetRepresentation())->GetValue();
+        renderer->AddActor(deforestationActors[year]);
+    }
+    vtkSliderCallback():renderer(0) {}
+    vtkSmartPointer<vtkRenderer> renderer;
+    vtkSmartPointer<vtkActor> deforestationActors [19];
+};
 
 vtkSmartPointer<vtkActor> GetElevationActor(){
     std::string path = "/Users/aramirez/Documents/SciViz/Proyecto/ColoredElevationMap/COL Height Map (ASTER 30m).png";
@@ -298,6 +327,14 @@ vtkSmartPointer<vtkActor> GetGradientActor(int year){
     return vectorGradientActor;
 }
 
+void EnableSlider(vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor){
+
+
+    //vtkSmartPointer<vtkSliderCallback> callback = vtkSmartPointer<vtkSliderCallback>::New();
+    //callback->ModelSource = flesh;
+
+    //sliderWidget->AddObserver(vtkCommand::InteractionEvent,callback);
+}
 
 int main(int argc, char* argv[])
 {
@@ -309,8 +346,7 @@ int main(int argc, char* argv[])
             vtkSmartPointer<vtkRenderWindow>::New();
     renderWindow->AddRenderer(renderer);
     renderWindow->SetSize(1500, 1500);
-    vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
-            vtkSmartPointer<vtkRenderWindowInteractor>::New();
+    vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
     renderWindowInteractor->SetRenderWindow(renderWindow);
 
 
@@ -319,12 +355,33 @@ int main(int argc, char* argv[])
 
     for (int i = 1; i < 20; ++i) {
         deforestationActors[i-1] = GetGradientActor(2000 + i);
-        renderer->AddActor(deforestationActors[i-1]);
+
     }
 
   // Add the actor to the scene
+  renderer->AddActor(deforestationActors[0]);
   renderer->AddActor(elevationActor);
   renderer->SetBackground(.1, .2, .3);
+
+    vtkSmartPointer<vtkSliderRepresentation3D> sliderRep = vtkSmartPointer<vtkSliderRepresentation3D>::New();
+    sliderRep->SetMinimumValue(1);
+    sliderRep->SetMaximumValue(19);
+    sliderRep->SetValue(1);
+    sliderRep->SetTitleText("Year");
+    sliderRep->SetTitleHeight(0.03);
+    sliderRep->GetPoint1Coordinate()->SetCoordinateSystemToWorld();
+    sliderRep->GetPoint1Coordinate()->SetValue(0,-300,0);
+    sliderRep->GetPoint2Coordinate()->SetCoordinateSystemToWorld();
+    sliderRep->GetPoint2Coordinate()->SetValue(1080,-300,0);
+    sliderRep->SetSliderLength(0.05);
+    sliderRep->SetSliderWidth(0.05);
+    sliderRep->SetEndCapLength(0.05);
+
+    vtkSmartPointer<vtkSliderWidget> sliderWidget = vtkSmartPointer<vtkSliderWidget>::New();
+    sliderWidget->SetInteractor(renderWindowInteractor);
+    sliderWidget->SetRepresentation(sliderRep);
+    sliderWidget->SetAnimationModeToAnimate();
+    sliderWidget->On();
 
   // Render and interact
   renderWindow->Render();
