@@ -1,5 +1,4 @@
 #include <vtkSmartPointer.h>
-
 #include <vtkActor.h>
 #include <vtkDelaunay2D.h>
 #include <vtkLookupTable.h>
@@ -34,6 +33,8 @@
 #include <vtkSliderRepresentation3D.h>
 #include <vtkSliderWidget.h>
 #include <vtkMarchingCubes.h>
+#include <vtkPlaybackRepresentation.h>
+#include <vtkPlaybackWidget.h>
 #include "vtkWarpScalar.h"
 #include "vtkDoubleArray.h"
 #include "vtkImageMapper3D.h"
@@ -58,7 +59,7 @@ public:
     virtual void Execute(vtkObject *caller, unsigned long, void*)
     {
         vtkSliderWidget *sliderWidget = reinterpret_cast<vtkSliderWidget*>(caller);
-        for (int i = 0; i < 19; ++i) {
+        for (int i = 0; i < 18; ++i) {
             renderer->RemoveActor(deforestationActors[i]);
         }
         int year = static_cast<vtkSliderRepresentation *>(sliderWidget->GetRepresentation())->GetValue() - 1;
@@ -66,8 +67,9 @@ public:
     }
     vtkSliderCallback():renderer(0) {}
     vtkSmartPointer<vtkRenderer> renderer;
-    vtkSmartPointer<vtkActor> deforestationActors [19] = {};
+    vtkSmartPointer<vtkActor> deforestationActors [18] = {};
 };
+
 
 vtkSmartPointer<vtkActor> GetElevationActor(){
     std::string path = "/Users/aramirez/Documents/SciViz/Proyecto/ColoredElevationMap/COL Height Map (ASTER 30m).png";
@@ -95,6 +97,7 @@ vtkSmartPointer<vtkActor> GetElevationActor(){
     delaunay->Update();*/
 
     vtkSmartPointer<vtkSmoothPolyDataFilter> smoothFilter =vtkSmartPointer<vtkSmoothPolyDataFilter>::New();
+    //smoothFilter->SetInputConnection(delaunay->GetOutputPort());
     smoothFilter->SetInputConnection(warp->GetOutputPort());
     smoothFilter->SetNumberOfIterations(15);
     smoothFilter->SetRelaxationFactor(0.001);
@@ -124,10 +127,7 @@ vtkSmartPointer<vtkActor> GetElevationActor(){
     // Create the color map
     vtkSmartPointer<vtkLookupTable> colorLookupTable =
             vtkSmartPointer<vtkLookupTable>::New();
-    //colorLookupTable->SetTableRange(minz, maxz);
-    //colorLookupTable->Build();
     auto tableSize = (maxz-minz)*10;
-    //MakeLUTFromCTF(, colorLookupTable);
 
     vtkSmartPointer<vtkColorTransferFunction> ctf = vtkSmartPointer<vtkColorTransferFunction>::New();
     ctf->SetColorSpaceToDiverging();
@@ -196,7 +196,8 @@ vtkSmartPointer<vtkActor> GetGradientActor(int year){
 
     int onRatio = 1;
     double scaleFactor = 2.0;
-    std::string fileName = "/Users/aramirez/Documents/SciViz/Proyecto/COL Forest Change/b_" + std::to_string(year) + ".1080.png";
+    //"diff_2011-2010.1080"
+    std::string fileName = "/Users/aramirez/Documents/SciViz/Proyecto/COL Forest Change/diff_" + std::to_string(year+1) +"-"+std::to_string(year)+ ".1080.png";
     // Read an image
     auto readerFactory = vtkSmartPointer<vtkImageReader2Factory>::New();
     vtkSmartPointer<vtkImageReader2> reader;
@@ -217,7 +218,7 @@ vtkSmartPointer<vtkActor> GetGradientActor(int year){
 
     // Use 1% of the points
     onRatio = image->GetPointData()->GetScalars()->GetNumberOfTuples() /
-              (image->GetPointData()->GetScalars()->GetNumberOfTuples() * 0.003);
+              (image->GetPointData()->GetScalars()->GetNumberOfTuples() * 0.05);
     scaleFactor = 1.0;
 
     // Compute the gradient of the Value
@@ -299,7 +300,7 @@ vtkSmartPointer<vtkActor> GetGradientActor(int year){
     // Select a small percentage of the gradients
     auto maskPoints = vtkSmartPointer<vtkMaskPoints>::New();
     maskPoints->SetInputConnection(scalarsToVectors->GetOutputPort());
-    maskPoints->RandomModeOn();
+    maskPoints->RandomModeOff();
     maskPoints->SetOnRatio(onRatio);
 
     auto vectorGradientGlyph = vtkSmartPointer<vtkGlyph3D>::New();
@@ -314,8 +315,7 @@ vtkSmartPointer<vtkActor> GetGradientActor(int year){
     // (xmin, ymin, xmax, ymax)
 
     auto vectorGradientMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    vectorGradientMapper->SetInputConnection(
-            vectorGradientGlyph->GetOutputPort());
+    vectorGradientMapper->SetInputConnection(vectorGradientGlyph->GetOutputPort());
     vectorGradientMapper->ScalarVisibilityOff();
 
     auto vectorGradientActor = vtkSmartPointer<vtkActor>::New();
@@ -325,15 +325,6 @@ vtkSmartPointer<vtkActor> GetGradientActor(int year){
     vectorGradientActor->SetPosition(0,0,50);
 
     return vectorGradientActor;
-}
-
-void EnableSlider(vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor){
-
-
-    //vtkSmartPointer<vtkSliderCallback> callback = vtkSmartPointer<vtkSliderCallback>::New();
-    //callback->ModelSource = flesh;
-
-    //sliderWidget->AddObserver(vtkCommand::InteractionEvent,callback);
 }
 
 int main(int argc, char* argv[])
@@ -355,7 +346,7 @@ int main(int argc, char* argv[])
 
     vtkSmartPointer<vtkSliderRepresentation3D> sliderRep = vtkSmartPointer<vtkSliderRepresentation3D>::New();
     sliderRep->SetMinimumValue(1);
-    sliderRep->SetMaximumValue(19);
+    sliderRep->SetMaximumValue(18);
     sliderRep->SetValue(1);
     sliderRep->SetTitleText("Year");
     sliderRep->SetTitleHeight(0.03);
@@ -378,8 +369,8 @@ int main(int argc, char* argv[])
 
     vtkSmartPointer<vtkActor> elevationActor = GetElevationActor();
 
-    for (int i = 1; i < 20; ++i) {
-        callback->deforestationActors[i-1] = GetGradientActor(2020 - i);
+    for (int i = 1; i < 19; ++i) {
+        callback->deforestationActors[i-1] = GetGradientActor(2000 + i);
 
     }
 
