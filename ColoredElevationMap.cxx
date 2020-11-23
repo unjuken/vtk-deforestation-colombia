@@ -61,12 +61,12 @@ public:
         for (int i = 0; i < 19; ++i) {
             renderer->RemoveActor(deforestationActors[i]);
         }
-        int year = static_cast<vtkSliderRepresentation *>(sliderWidget->GetRepresentation())->GetValue();
+        int year = static_cast<vtkSliderRepresentation *>(sliderWidget->GetRepresentation())->GetValue() - 1;
         renderer->AddActor(deforestationActors[year]);
     }
     vtkSliderCallback():renderer(0) {}
     vtkSmartPointer<vtkRenderer> renderer;
-    vtkSmartPointer<vtkActor> deforestationActors [19];
+    vtkSmartPointer<vtkActor> deforestationActors [19] = {};
 };
 
 vtkSmartPointer<vtkActor> GetElevationActor(){
@@ -350,17 +350,7 @@ int main(int argc, char* argv[])
     renderWindowInteractor->SetRenderWindow(renderWindow);
 
 
-    vtkSmartPointer<vtkActor> elevationActor = GetElevationActor();
-    vtkSmartPointer<vtkActor> deforestationActors [19] = {};
 
-    for (int i = 1; i < 20; ++i) {
-        deforestationActors[i-1] = GetGradientActor(2000 + i);
-
-    }
-
-  // Add the actor to the scene
-  renderer->AddActor(deforestationActors[0]);
-  renderer->AddActor(elevationActor);
   renderer->SetBackground(.1, .2, .3);
 
     vtkSmartPointer<vtkSliderRepresentation3D> sliderRep = vtkSmartPointer<vtkSliderRepresentation3D>::New();
@@ -382,6 +372,23 @@ int main(int argc, char* argv[])
     sliderWidget->SetRepresentation(sliderRep);
     sliderWidget->SetAnimationModeToAnimate();
     sliderWidget->On();
+
+    vtkSmartPointer<vtkSliderCallback> callback = vtkSmartPointer<vtkSliderCallback>::New();
+    callback->renderer = renderer;
+
+    vtkSmartPointer<vtkActor> elevationActor = GetElevationActor();
+
+    for (int i = 1; i < 20; ++i) {
+        callback->deforestationActors[i-1] = GetGradientActor(2020 - i);
+
+    }
+
+    // Add the actor to the scene
+    renderer->AddActor(callback->deforestationActors[0]);
+    renderer->AddActor(elevationActor);
+
+
+    sliderWidget->AddObserver(vtkCommand::InteractionEvent,callback);
 
   // Render and interact
   renderWindow->Render();
