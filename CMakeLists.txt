@@ -3,26 +3,30 @@ cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
 project(ColoredElevationMap)
 
-find_package(VTK COMPONENTS 
-  vtkCommonCore
-  vtkIOImage
-  vtkCommonDataModel
-  vtkFiltersCore
-  vtkFiltersGeneral
-  vtkIOXML
-  vtkInteractionStyle
-  vtkRenderingContextOpenGL2
-  vtkInteractionImage
-  vtkRenderingCore
-  vtkRenderingFreeType
-  vtkRenderingGL2PSOpenGL2
-  vtkCommonColor
-  vtkFiltersPoints
-  vtkFiltersSources
-  vtkIOGeometry
-  vtkIOLegacy
-  vtkIOPLY
-  vtkRenderingGL2PSOpenGL2
+find_package(VTK COMPONENTS
+        vtkCommonColor
+        vtkCommonCore
+        vtkCommonDataModel
+        vtkFiltersCore
+        vtkFiltersGeneral
+        vtkFiltersPoints
+        vtkFiltersSources
+        vtkImagingColor
+        vtkImagingCore
+        vtkImagingGeneral
+        vtkImagingMath
+        vtkImagingSources
+        vtkInteractionImage
+        vtkInteractionStyle
+        vtkIOGeometry
+        vtkIOImage
+        vtkIOLegacy
+        vtkIOPLY
+        vtkIOXML
+        vtkRenderingContextOpenGL2
+        vtkRenderingCore
+        vtkRenderingFreeType
+        vtkRenderingGL2PSOpenGL2
   vtkRenderingOpenGL2 QUIET)
 if (NOT VTK_FOUND)
   message("Skipping ColoredElevationMap: ${VTK_NOT_FOUND_MESSAGE}")
